@@ -1,4 +1,4 @@
-/*! iScroll v5.1.2 ~ (c) 2008-2014 Matteo Spinelli ~ http://cubiq.org/license */
+/*! iScroll v5.1.3 ~ (c) 2008-2014 Matteo Spinelli ~ http://cubiq.org/license */
 (function (window, document, Math) {
 var rAF = window.requestAnimationFrame	||
 	window.webkitRequestAnimationFrame	||
@@ -335,7 +335,7 @@ function IScroll (el, options) {
 }
 
 IScroll.prototype = {
-	version: '5.1.2',
+	version: '5.1.3',
 
 	_init: function () {
 		this._initEvents();
@@ -1053,6 +1053,9 @@ IScroll.prototype = {
 
 		if ( this.wheelTimeout === undefined ) {
 			that._execEvent('scrollStart');
+			//Gemma's fixed for scrollEnd twice when using mousewheel on snap option
+			that.moved = false;
+			//Gemma's fixed end
 		}
 
 		// Execute the scrollEnd event after 400ms the wheel stopped scrolling
@@ -1063,8 +1066,13 @@ IScroll.prototype = {
 		}, 400);
 
 		if ( 'deltaX' in e ) {
-			wheelDeltaX = -e.deltaX;
-			wheelDeltaY = -e.deltaY;
+			if (e.deltaMode === 1) {
+				wheelDeltaX = -e.deltaX * this.options.mouseWheelSpeed;
+				wheelDeltaY = -e.deltaY * this.options.mouseWheelSpeed;
+			} else {
+				wheelDeltaX = -e.deltaX;
+				wheelDeltaY = -e.deltaY;
+			}
 		} else if ( 'wheelDeltaX' in e ) {
 			wheelDeltaX = e.wheelDeltaX / 120 * this.options.mouseWheelSpeed;
 			wheelDeltaY = e.wheelDeltaY / 120 * this.options.mouseWheelSpeed;
@@ -1516,7 +1524,11 @@ IScroll.prototype = {
 				that._translate(destX, destY);
 				
 				if ( !that.resetPosition(that.options.bounceTime) ) {
-					that._execEvent('scrollEnd');
+					//Gemma's fixed for scrollEnd twice when using mousewheel on snap option
+					if ( that.moved === true ) {
+						that._execEvent('scrollEnd');
+					}
+					//Gemma's fixed end
 				}
 
 				return;
